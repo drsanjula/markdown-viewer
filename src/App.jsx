@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
+import { fileOpen, fileSave } from 'browser-fs-access';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { FileText, Eye, Code, Copy, Check, Trash2 } from 'lucide-react';
+import { FileText, Eye, Code, Copy, Check, Trash2, FolderOpen, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './App.css';
 
@@ -59,6 +60,34 @@ function App() {
     }
   };
 
+  const handleOpen = async () => {
+    try {
+      const blob = await fileOpen({
+        mimeTypes: ['text/markdown', 'text/plain'],
+        extensions: ['.md', '.markdown', '.txt'],
+        description: 'Markdown Files',
+      });
+      const text = await blob.text();
+      setMarkdown(text);
+      localStorage.setItem('mk-content', text);
+    } catch (err) {
+      if (err.name !== 'AbortError') console.error(err);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      const blob = new Blob([markdown], { type: 'text/markdown' });
+      await fileSave(blob, {
+        fileName: 'document.md',
+        extensions: ['.md', '.markdown'],
+        description: 'Markdown File',
+      });
+    } catch (err) {
+      if (err.name !== 'AbortError') console.error(err);
+    }
+  };
+
   return (
     <div className="app-container">
       <header className="header">
@@ -68,6 +97,14 @@ function App() {
         </div>
 
         <div className="action-bar">
+          <button className="glass-button" onClick={handleOpen}>
+            <FolderOpen size={16} />
+            Open
+          </button>
+          <button className="glass-button" onClick={handleSave}>
+            <Save size={16} />
+            Save
+          </button>
           <button className="glass-button" onClick={handleCopy}>
             {copied ? <Check size={16} /> : <Copy size={16} />}
             {copied ? 'Copied' : 'Copy Markdown'}
