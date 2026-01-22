@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import Mermaid from './components/Mermaid';
 import { fileOpen, fileSave } from 'browser-fs-access';
 import html2pdf from 'html2pdf.js';
 import ReactMarkdown from 'react-markdown';
@@ -293,6 +294,9 @@ ${element.innerHTML}
                 components={{
                   code({ node, inline, className, children, ...props }) {
                     const match = /language-(\w+)/.exec(className || '')
+                    if (!inline && match && match[1] === 'mermaid') {
+                      return <Mermaid chart={String(children).replace(/\n$/, '')} />;
+                    }
                     return !inline && match ? (
                       <SyntaxHighlighter
                         {...props}
