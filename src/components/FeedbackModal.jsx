@@ -10,7 +10,7 @@ const FeedbackModal = ({ isOpen, onClose }) => {
     const handleSend = () => {
         const subject = encodeURIComponent('Feedback for Markdown Viewer');
         const body = encodeURIComponent(message);
-        window.location.href = `mailto:drsanjula@gmail.com?subject=${subject}&body=${body}`;
+        window.location.href = `mailto:sanjulajayasinghe1@gmail.com?subject=${subject}&body=${body}`;
         onClose();
         setMessage('');
     };
