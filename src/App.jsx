@@ -3,6 +3,8 @@ import { fileOpen, fileSave } from 'browser-fs-access';
 import html2pdf from 'html2pdf.js';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { FileText, Eye, Code, Copy, Check, Trash2, FolderOpen, Save, Download, FileCode, Bold, Italic, List, ListOrdered, Image as ImageIcon, Link as LinkIcon, Columns, PenTool } from 'lucide-react';
@@ -286,7 +288,8 @@ ${element.innerHTML}
             >
               <ReactMarkdown
                 children={markdown}
-                remarkPlugins={[remarkGfm]}
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[rehypeKatex]}
                 components={{
                   code({ node, inline, className, children, ...props }) {
                     const match = /language-(\w+)/.exec(className || '')
