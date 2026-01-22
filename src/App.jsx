@@ -300,6 +300,17 @@ ${element.innerHTML}
           </div>
         </motion.div>
       </main>
+      <footer className="footer">
+        <div className="stats-item">
+          <span>Words:</span> {markdown.split(/\s+/).filter(Boolean).length}
+        </div>
+        <div className="stats-item">
+          <span>Chars:</span> {markdown.length}
+        </div>
+        <div className="stats-item">
+          <span>Reading Time:</span> {Math.ceil(markdown.split(/\s+/).filter(Boolean).length / 200)} min
+        </div>
+      </footer>
     </div>
   );
 }
