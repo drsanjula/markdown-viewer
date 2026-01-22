@@ -5,7 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { FileText, Eye, Code, Copy, Check, Trash2, FolderOpen, Save, Download, FileCode } from 'lucide-react';
+import { FileText, Eye, Code, Copy, Check, Trash2, FolderOpen, Save, Download, FileCode, Bold, Italic, List, ListOrdered, Image as ImageIcon, Link as LinkIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './App.css';
 
@@ -72,6 +72,27 @@ function App() {
     timeoutRef.current = setTimeout(() => {
       scrollingSource.current = null;
     }, 100);
+  };
+
+  const insertText = (before, after = '') => {
+    const textarea = editorRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = markdown;
+    const beforeText = text.substring(0, start);
+    const selectText = text.substring(start, end);
+    const afterText = text.substring(end);
+
+    const newText = beforeText + before + selectText + after + afterText;
+    setMarkdown(newText);
+    localStorage.setItem('mk-content', newText);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + before.length, end + before.length);
+    }, 0);
   };
 
   const handleCopy = () => {
@@ -211,6 +232,14 @@ ${element.innerHTML}
             <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Code size={16} color="var(--accent-secondary)" /> EDITOR
             </span>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <button className="icon-btn" onClick={() => insertText('**', '**')} title="Bold"><Bold size={14} /></button>
+              <button className="icon-btn" onClick={() => insertText('*', '*')} title="Italic"><Italic size={14} /></button>
+              <button className="icon-btn" onClick={() => insertText('- ')} title="List"><List size={14} /></button>
+              <button className="icon-btn" onClick={() => insertText('1. ')} title="Ordered List"><ListOrdered size={14} /></button>
+              <button className="icon-btn" onClick={() => insertText('[', '](url)')} title="Link"><LinkIcon size={14} /></button>
+              <button className="icon-btn" onClick={() => insertText('![alt](', ')')} title="Image"><ImageIcon size={14} /></button>
+            </div>
             <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>{markdown.length} chars</span>
           </div>
           <textarea
