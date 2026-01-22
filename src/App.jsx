@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { fileOpen, fileSave } from 'browser-fs-access';
 import html2pdf from 'html2pdf.js';
-import { FileText, Eye, Code, Copy, Check, Trash2, FolderOpen, Save, Download, FileCode, Bold, Italic, List, ListOrdered, Image as ImageIcon, Link as LinkIcon, Columns, PenTool, Palette, MessageSquare } from 'lucide-react';
+import { FileText, Code, Check, Trash2, FolderOpen, Save, Download, FileCode, Columns, PenTool, Palette, Eye, Copy as CopyIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import EditorPane from './components/EditorPane';
 import PreviewPane from './components/PreviewPane';
-import Mermaid from './components/Mermaid';
-import FeedbackModal from './components/FeedbackModal';
 import Footer from './components/Footer';
 import './App.css';
 
@@ -47,9 +45,11 @@ function App() {
   const [copied, setCopied] = useState(false);
   const [viewMode, setViewMode] = useState('split');
   const [theme, setTheme] = useState('dark');
-  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [splitRatio, setSplitRatio] = useState(0.5);
+  const [isDragging, setIsDragging] = useState(false);
   const editorRef = useRef(null);
   const previewRef = useRef(null);
+  const mainRef = useRef(null);
   const scrollingSource = useRef(null);
   const timeoutRef = useRef(null);
 
@@ -65,6 +65,42 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('mk-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    if (isDragging) {
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      window.addEventListener('mousemove', handleResize);
+      window.addEventListener('mouseup', handleResizeEnd);
+    } else {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', handleResize);
+      window.removeEventListener('mouseup', handleResizeEnd);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleResize);
+      window.removeEventListener('mouseup', handleResizeEnd);
+    };
+  }, [isDragging]);
+
+  const handleResizeStart = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleResize = (e) => {
+    if (!mainRef.current) return;
+    const { left, width } = mainRef.current.getBoundingClientRect();
+    const newRatio = (e.clientX - left) / width;
+    if (newRatio > 0.1 && newRatio < 0.9) {
+      setSplitRatio(newRatio);
+    }
+  };
+
+  const handleResizeEnd = () => {
+    setIsDragging(false);
+  };
 
   const toggleTheme = () => {
     const themes = ['dark', 'light', 'cyberpunk'];
@@ -270,9 +306,6 @@ ${element.innerHTML}
           <button className="glass-button" onClick={toggleTheme} title={`Theme: ${theme}`}>
             <Palette size={16} />
           </button>
-          <button className="glass-button" onClick={() => setIsFeedbackOpen(true)} title="Send Feedback">
-            <MessageSquare size={16} />
-          </button>
           <button className="glass-button" onClick={handleClear} style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
             <Trash2 size={16} />
             Clear
@@ -280,11 +313,11 @@ ${element.innerHTML}
         </div>
       </header>
 
-      <main className="main-content">
+      <main className="main-content" ref={mainRef}>
         {(viewMode === 'split' || viewMode === 'editor') && (
           <motion.div
             className="pane-wrapper"
-            style={{ flex: 1, display: 'flex', overflow: 'hidden' }}
+            style={{ flex: viewMode === 'split' ? splitRatio : 1, display: 'flex', overflow: 'hidden' }}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
@@ -299,10 +332,17 @@ ${element.innerHTML}
           </motion.div>
         )}
 
+        {viewMode === 'split' && (
+          <div
+            className={`resizer ${isDragging ? 'dragging' : ''}`}
+            onMouseDown={handleResizeStart}
+          />
+        )}
+
         {(viewMode === 'split' || viewMode === 'preview') && (
           <motion.div
             className="pane-wrapper"
-            style={{ flex: 1, display: 'flex', overflow: 'hidden' }}
+            style={{ flex: viewMode === 'split' ? (1 - splitRatio) : 1, display: 'flex', overflow: 'hidden' }}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
@@ -316,7 +356,6 @@ ${element.innerHTML}
         )}
       </main>
       <Footer content={markdown} />
-      <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
     </div>
   );
 }
