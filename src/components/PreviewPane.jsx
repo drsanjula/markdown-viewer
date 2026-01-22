@@ -2,8 +2,8 @@ import React, { useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
+import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import rehypeSanitize from 'rehype-sanitize';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Eye } from 'lucide-react';
@@ -26,8 +26,11 @@ const PreviewPane = ({ content, scrollRef, onScroll }) => {
                 <ReactMarkdown
                     children={content}
                     remarkPlugins={[remarkGfm, remarkMath]}
-                    rehypePlugins={[rehypeKatex, rehypeSanitize]}
+                    rehypePlugins={[rehypeKatex]}
                     components={{
+                        a: ({ node, ...props }) => (
+                            <a {...props} target="_blank" rel="noopener noreferrer" />
+                        ),
                         code({ node, inline, className, children, ...props }) {
                             const match = /language-(\w+)/.exec(className || '')
                             if (!inline && match && match[1] === 'mermaid') {
