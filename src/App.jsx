@@ -5,7 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { FileText, Eye, Code, Copy, Check, Trash2, FolderOpen, Save, Download, FileCode, Bold, Italic, List, ListOrdered, Image as ImageIcon, Link as LinkIcon } from 'lucide-react';
+import { FileText, Eye, Code, Copy, Check, Trash2, FolderOpen, Save, Download, FileCode, Bold, Italic, List, ListOrdered, Image as ImageIcon, Link as LinkIcon, Columns, PenTool } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './App.css';
 
@@ -35,6 +35,7 @@ console.log(greeting);
 function App() {
   const [markdown, setMarkdown] = useState(defaultMarkdown);
   const [copied, setCopied] = useState(false);
+  const [viewMode, setViewMode] = useState('split'); // 'split', 'editor', 'preview'
   const editorRef = useRef(null);
   const previewRef = useRef(null);
   const scrollingSource = useRef(null);
@@ -194,6 +195,17 @@ ${element.innerHTML}
         </div>
 
         <div className="action-bar">
+          <div className="view-toggles" style={{ display: 'flex', gap: '4px', borderRight: '1px solid var(--glass-border)', paddingRight: '12px', marginRight: '4px' }}>
+            <button className={`glass-button ${viewMode === 'editor' ? 'active' : ''}`} onClick={() => setViewMode('editor')} title="Editor Only">
+              <PenTool size={16} />
+            </button>
+            <button className={`glass-button ${viewMode === 'split' ? 'active' : ''}`} onClick={() => setViewMode('split')} title="Split View">
+              <Columns size={16} />
+            </button>
+            <button className={`glass-button ${viewMode === 'preview' ? 'active' : ''}`} onClick={() => setViewMode('preview')} title="Preview Only">
+              <Eye size={16} />
+            </button>
+          </div>
           <button className="glass-button" onClick={handleOpen}>
             <FolderOpen size={16} />
             Open
@@ -222,83 +234,87 @@ ${element.innerHTML}
       </header>
 
       <main className="main-content">
-        <motion.div
-          className="pane editor-pane"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="pane-header">
-            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Code size={16} color="var(--accent-secondary)" /> EDITOR
-            </span>
-            <div style={{ display: 'flex', gap: '4px' }}>
-              <button className="icon-btn" onClick={() => insertText('**', '**')} title="Bold"><Bold size={14} /></button>
-              <button className="icon-btn" onClick={() => insertText('*', '*')} title="Italic"><Italic size={14} /></button>
-              <button className="icon-btn" onClick={() => insertText('- ')} title="List"><List size={14} /></button>
-              <button className="icon-btn" onClick={() => insertText('1. ')} title="Ordered List"><ListOrdered size={14} /></button>
-              <button className="icon-btn" onClick={() => insertText('[', '](url)')} title="Link"><LinkIcon size={14} /></button>
-              <button className="icon-btn" onClick={() => insertText('![alt](', ')')} title="Image"><ImageIcon size={14} /></button>
-            </div>
-            <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>{markdown.length} chars</span>
-          </div>
-          <textarea
-            ref={editorRef}
-            onScroll={() => syncScroll('editor')}
-            className="editor-textarea"
-            value={markdown}
-            onChange={handleChange}
-            placeholder="Type your markdown here..."
-            spellCheck="false"
-          />
-        </motion.div>
-
-        <motion.div
-          className="pane preview-pane"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          <div className="pane-header">
-            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Eye size={16} color="var(--accent-primary)" /> PREVIEW
-            </span>
-          </div>
-          <div
-            className="preview-content"
-            ref={previewRef}
-            onScroll={() => syncScroll('preview')}
+        {(viewMode === 'split' || viewMode === 'editor') && (
+          <motion.div
+            className="pane editor-pane"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
           >
-            <ReactMarkdown
-              children={markdown}
-              remarkPlugins={[remarkGfm]}
-              components={{
-                code({ node, inline, className, children, ...props }) {
-                  const match = /language-(\w+)/.exec(className || '')
-                  return !inline && match ? (
-                    <SyntaxHighlighter
-                      {...props}
-                      children={String(children).replace(/\n$/, '')}
-                      style={vscDarkPlus}
-                      language={match[1]}
-                      PreTag="div"
-                      customStyle={{
-                        background: 'transparent',
-                        padding: '1.5em',
-                        borderRadius: '0.5em',
-                        border: '1px solid var(--border-color)',
-                      }}
-                    />
-                  ) : (
-                    <code {...props} className={className}>
-                      {children}
-                    </code>
-                  )
-                }
-              }}
+            <div className="pane-header">
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Code size={16} color="var(--accent-secondary)" /> EDITOR
+              </span>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <button className="icon-btn" onClick={() => insertText('**', '**')} title="Bold"><Bold size={14} /></button>
+                <button className="icon-btn" onClick={() => insertText('*', '*')} title="Italic"><Italic size={14} /></button>
+                <button className="icon-btn" onClick={() => insertText('- ')} title="List"><List size={14} /></button>
+                <button className="icon-btn" onClick={() => insertText('1. ')} title="Ordered List"><ListOrdered size={14} /></button>
+                <button className="icon-btn" onClick={() => insertText('[', '](url)')} title="Link"><LinkIcon size={14} /></button>
+                <button className="icon-btn" onClick={() => insertText('![alt](', ')')} title="Image"><ImageIcon size={14} /></button>
+              </div>
+              <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>{markdown.length} chars</span>
+            </div>
+            <textarea
+              ref={editorRef}
+              onScroll={() => syncScroll('editor')}
+              className="editor-textarea"
+              value={markdown}
+              onChange={handleChange}
+              placeholder="Type your markdown here..."
+              spellCheck="false"
             />
-          </div>
-        </motion.div>
+          </motion.div>
+        )}
+
+        {(viewMode === 'split' || viewMode === 'preview') && (
+          <motion.div
+            className="pane preview-pane"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <div className="pane-header">
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Eye size={16} color="var(--accent-primary)" /> PREVIEW
+              </span>
+            </div>
+            <div
+              className="preview-content"
+              ref={previewRef}
+              onScroll={() => syncScroll('preview')}
+            >
+              <ReactMarkdown
+                children={markdown}
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  code({ node, inline, className, children, ...props }) {
+                    const match = /language-(\w+)/.exec(className || '')
+                    return !inline && match ? (
+                      <SyntaxHighlighter
+                        {...props}
+                        children={String(children).replace(/\n$/, '')}
+                        style={vscDarkPlus}
+                        language={match[1]}
+                        PreTag="div"
+                        customStyle={{
+                          background: 'transparent',
+                          padding: '1.5em',
+                          borderRadius: '0.5em',
+                          border: '1px solid var(--border-color)',
+                        }}
+                      />
+                    ) : (
+                      <code {...props} className={className}>
+                        {children}
+                      </code>
+                    )
+                  }
+                }}
+              />
+            </div>
+          </motion.div>
+        )}
       </main>
       <footer className="footer">
         <div className="stats-item">

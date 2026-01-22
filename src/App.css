@@ -112,6 +112,12 @@
   transform: translateY(-1px);
 }
 
+.glass-button.active {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: var(--accent-primary);
+  color: #fff;
+}
+
 .glass-button:active {
   transform: translateY(0);
 }
