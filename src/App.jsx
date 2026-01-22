@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { fileOpen, fileSave } from 'browser-fs-access';
 import html2pdf from 'html2pdf.js';
 import ReactMarkdown from 'react-markdown';
@@ -35,6 +35,10 @@ console.log(greeting);
 function App() {
   const [markdown, setMarkdown] = useState(defaultMarkdown);
   const [copied, setCopied] = useState(false);
+  const editorRef = useRef(null);
+  const previewRef = useRef(null);
+  const scrollingSource = useRef(null);
+  const timeoutRef = useRef(null);
 
   useEffect(() => {
     // Save to local storage
@@ -46,6 +50,28 @@ function App() {
     const val = e.target.value;
     setMarkdown(val);
     localStorage.setItem('mk-content', val);
+  };
+
+  const syncScroll = (source) => {
+    const editor = editorRef.current;
+    const preview = previewRef.current;
+    if (!editor || !preview) return;
+
+    if (scrollingSource.current && scrollingSource.current !== source) return;
+    scrollingSource.current = source;
+
+    if (source === 'editor') {
+      const percentage = editor.scrollTop / (editor.scrollHeight - editor.clientHeight);
+      preview.scrollTop = percentage * (preview.scrollHeight - preview.clientHeight);
+    } else {
+      const percentage = preview.scrollTop / (preview.scrollHeight - preview.clientHeight);
+      editor.scrollTop = percentage * (editor.scrollHeight - editor.clientHeight);
+    }
+
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      scrollingSource.current = null;
+    }, 100);
   };
 
   const handleCopy = () => {
@@ -188,6 +214,8 @@ ${element.innerHTML}
             <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>{markdown.length} chars</span>
           </div>
           <textarea
+            ref={editorRef}
+            onScroll={() => syncScroll('editor')}
             className="editor-textarea"
             value={markdown}
             onChange={handleChange}
@@ -207,7 +235,11 @@ ${element.innerHTML}
               <Eye size={16} color="var(--accent-primary)" /> PREVIEW
             </span>
           </div>
-          <div className="preview-content">
+          <div
+            className="preview-content"
+            ref={previewRef}
+            onScroll={() => syncScroll('preview')}
+          >
             <ReactMarkdown
               children={markdown}
               remarkPlugins={[remarkGfm]}
