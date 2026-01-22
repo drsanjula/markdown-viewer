@@ -8,7 +8,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { FileText, Eye, Code, Copy, Check, Trash2, FolderOpen, Save, Download, FileCode, Bold, Italic, List, ListOrdered, Image as ImageIcon, Link as LinkIcon, Columns, PenTool } from 'lucide-react';
+import { FileText, Eye, Code, Copy, Check, Trash2, FolderOpen, Save, Download, FileCode, Bold, Italic, List, ListOrdered, Image as ImageIcon, Link as LinkIcon, Columns, PenTool, Palette } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './App.css';
 
@@ -38,7 +38,8 @@ console.log(greeting);
 function App() {
   const [markdown, setMarkdown] = useState(defaultMarkdown);
   const [copied, setCopied] = useState(false);
-  const [viewMode, setViewMode] = useState('split'); // 'split', 'editor', 'preview'
+  const [viewMode, setViewMode] = useState('split');
+  const [theme, setTheme] = useState('dark');
   const editorRef = useRef(null);
   const previewRef = useRef(null);
   const scrollingSource = useRef(null);
@@ -48,7 +49,20 @@ function App() {
     // Save to local storage
     const saved = localStorage.getItem('mk-content');
     if (saved) setMarkdown(saved);
+    const savedTheme = localStorage.getItem('mk-theme') || 'dark';
+    setTheme(savedTheme);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('mk-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    const themes = ['dark', 'light', 'cyberpunk'];
+    const nextTheme = themes[(themes.indexOf(theme) + 1) % themes.length];
+    setTheme(nextTheme);
+  };
 
   const handleChange = (e) => {
     const val = e.target.value;
@@ -228,6 +242,9 @@ ${element.innerHTML}
           <button className="glass-button" onClick={handleCopy}>
             {copied ? <Check size={16} /> : <Copy size={16} />}
             {copied ? 'Copied' : 'Copy Markdown'}
+          </button>
+          <button className="glass-button" onClick={toggleTheme} title={`Theme: ${theme}`}>
+            <Palette size={16} />
           </button>
           <button className="glass-button" onClick={handleClear} style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
             <Trash2 size={16} />
