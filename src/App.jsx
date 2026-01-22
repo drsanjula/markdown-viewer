@@ -1,15 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import Mermaid from './components/Mermaid';
 import { fileOpen, fileSave } from 'browser-fs-access';
 import html2pdf from 'html2pdf.js';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { FileText, Eye, Code, Copy, Check, Trash2, FolderOpen, Save, Download, FileCode, Bold, Italic, List, ListOrdered, Image as ImageIcon, Link as LinkIcon, Columns, PenTool, Palette } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { FileText, Code, Check, Trash2, FolderOpen, Save, Download, FileCode, Columns, PenTool, Palette, Eye, Copy as CopyIcon } from 'lucide-react';
+import { motion } from 'framer-motion';
+import EditorPane from './components/EditorPane';
+import PreviewPane from './components/PreviewPane';
+import Footer from './components/Footer';
 import './App.css';
 
 const defaultMarkdown = `# Welcome to Modern Markdown
@@ -22,6 +18,15 @@ Start typing to see the magic happen...
 const greeting = "Hello, World!";
 console.log(greeting);
 \`\`\`
+- **Mermaid Diagrams**:
+\`\`\`mermaid
+graph TD;
+    A-->B;
+    A-->C;
+    B-->D;
+    C-->D;
+\`\`\`
+- **Math Equations**: $E = mc^2$
 - **GitHub Flavored**: Tables, tasks, and more!
 - **Glassmorphism UI**: Beautiful, modern design.
 
@@ -71,7 +76,14 @@ function App() {
   };
 
   const syncScroll = (source) => {
-    const editor = editorRef.current;
+    const editor = editorRef.current?.querySelector('.editor-container') || editorRef.current;
+
+    // For editor pane component, we might need to drill down or pass ref correctly
+    // If using CodeMirror, scrolling is handled differently. Sticking to textarea for now via EditorPane passthrough
+
+    // In our refactored component, editorRef is passed to the container div or textarea.
+    // Let's assume editorRef points to the scrollable element in EditorPane
+
     const preview = previewRef.current;
     if (!editor || !preview) return;
 
@@ -93,7 +105,14 @@ function App() {
   };
 
   const insertText = (before, after = '') => {
-    const textarea = editorRef.current;
+    // We need access to the textarea element. 
+    // Since we refactored, we need to ensure editorRef points to the textarea
+    // Currently editorRef is passed to EditorPane scrollRef.
+    // Let's modify getting the textarea from the ref container
+
+    const container = editorRef.current;
+    if (!container) return;
+    const textarea = container.querySelector('textarea');
     if (!textarea) return;
 
     const start = textarea.selectionStart;
@@ -155,7 +174,7 @@ function App() {
   };
 
   const handleExportHTML = () => {
-    const element = document.querySelector('.preview-content');
+    const element = previewRef.current; // Ref now points to preview-content div
     if (!element) return;
 
     const htmlContent = `
@@ -176,6 +195,7 @@ th { background: #f9fafb; }
 a { color: #6366f1; text-decoration: none; }
 a:hover { text-decoration: underline; }
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
 </head>
 <body>
 ${element.innerHTML}
@@ -192,7 +212,8 @@ ${element.innerHTML}
   };
 
   const handleExportPDF = () => {
-    const element = document.querySelector('.preview-content');
+    const element = previewRef.current;
+    if (!element) return;
     const opt = {
       margin: 1,
       filename: 'document.pdf',
@@ -240,8 +261,8 @@ ${element.innerHTML}
             HTML
           </button>
           <button className="glass-button" onClick={handleCopy}>
-            {copied ? <Check size={16} /> : <Copy size={16} />}
-            {copied ? 'Copied' : 'Copy Markdown'}
+            {copied ? <Check size={16} /> : <CopyIcon size={16} />}
+            {copied ? 'Copied' : 'Copy Mardown'}
           </button>
           <button className="glass-button" onClick={toggleTheme} title={`Theme: ${theme}`}>
             <Palette size={16} />
@@ -256,101 +277,39 @@ ${element.innerHTML}
       <main className="main-content">
         {(viewMode === 'split' || viewMode === 'editor') && (
           <motion.div
-            className="pane editor-pane"
+            className="pane-wrapper"
+            style={{ flex: 1, display: 'flex', overflow: 'hidden' }}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="pane-header">
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Code size={16} color="var(--accent-secondary)" /> EDITOR
-              </span>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                <button className="icon-btn" onClick={() => insertText('**', '**')} title="Bold"><Bold size={14} /></button>
-                <button className="icon-btn" onClick={() => insertText('*', '*')} title="Italic"><Italic size={14} /></button>
-                <button className="icon-btn" onClick={() => insertText('- ')} title="List"><List size={14} /></button>
-                <button className="icon-btn" onClick={() => insertText('1. ')} title="Ordered List"><ListOrdered size={14} /></button>
-                <button className="icon-btn" onClick={() => insertText('[', '](url)')} title="Link"><LinkIcon size={14} /></button>
-                <button className="icon-btn" onClick={() => insertText('![alt](', ')')} title="Image"><ImageIcon size={14} /></button>
-              </div>
-              <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>{markdown.length} chars</span>
-            </div>
-            <textarea
-              ref={editorRef}
-              onScroll={() => syncScroll('editor')}
-              className="editor-textarea"
-              value={markdown}
+            <EditorPane
+              content={markdown}
               onChange={handleChange}
-              placeholder="Type your markdown here..."
-              spellCheck="false"
+              scrollRef={editorRef}
+              onScroll={() => syncScroll('editor')}
+              insertText={insertText}
             />
           </motion.div>
         )}
 
         {(viewMode === 'split' || viewMode === 'preview') && (
           <motion.div
-            className="pane preview-pane"
+            className="pane-wrapper"
+            style={{ flex: 1, display: 'flex', overflow: 'hidden' }}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <div className="pane-header">
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Eye size={16} color="var(--accent-primary)" /> PREVIEW
-              </span>
-            </div>
-            <div
-              className="preview-content"
-              ref={previewRef}
+            <PreviewPane
+              content={markdown}
+              scrollRef={previewRef}
               onScroll={() => syncScroll('preview')}
-            >
-              <ReactMarkdown
-                children={markdown}
-                remarkPlugins={[remarkGfm, remarkMath]}
-                rehypePlugins={[rehypeKatex]}
-                components={{
-                  code({ node, inline, className, children, ...props }) {
-                    const match = /language-(\w+)/.exec(className || '')
-                    if (!inline && match && match[1] === 'mermaid') {
-                      return <Mermaid chart={String(children).replace(/\n$/, '')} />;
-                    }
-                    return !inline && match ? (
-                      <SyntaxHighlighter
-                        {...props}
-                        children={String(children).replace(/\n$/, '')}
-                        style={vscDarkPlus}
-                        language={match[1]}
-                        PreTag="div"
-                        customStyle={{
-                          background: 'transparent',
-                          padding: '1.5em',
-                          borderRadius: '0.5em',
-                          border: '1px solid var(--border-color)',
-                        }}
-                      />
-                    ) : (
-                      <code {...props} className={className}>
-                        {children}
-                      </code>
-                    )
-                  }
-                }}
-              />
-            </div>
+            />
           </motion.div>
         )}
       </main>
-      <footer className="footer">
-        <div className="stats-item">
-          <span>Words:</span> {markdown.split(/\s+/).filter(Boolean).length}
-        </div>
-        <div className="stats-item">
-          <span>Chars:</span> {markdown.length}
-        </div>
-        <div className="stats-item">
-          <span>Reading Time:</span> {Math.ceil(markdown.split(/\s+/).filter(Boolean).length / 200)} min
-        </div>
-      </footer>
+      <Footer content={markdown} />
     </div>
   );
 }
