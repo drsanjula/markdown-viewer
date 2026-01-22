@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { fileOpen, fileSave } from 'browser-fs-access';
 import html2pdf from 'html2pdf.js';
-import { FileText, Code, Check, Trash2, FolderOpen, Save, Download, FileCode, Columns, PenTool, Palette, Eye, Copy as CopyIcon } from 'lucide-react';
+import { FileText, Eye, Code, Copy, Check, Trash2, FolderOpen, Save, Download, FileCode, Bold, Italic, List, ListOrdered, Image as ImageIcon, Link as LinkIcon, Columns, PenTool, Palette, MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
 import EditorPane from './components/EditorPane';
 import PreviewPane from './components/PreviewPane';
+import Mermaid from './components/Mermaid';
+import FeedbackModal from './components/FeedbackModal';
 import Footer from './components/Footer';
 import './App.css';
 
@@ -45,6 +47,7 @@ function App() {
   const [copied, setCopied] = useState(false);
   const [viewMode, setViewMode] = useState('split');
   const [theme, setTheme] = useState('dark');
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const editorRef = useRef(null);
   const previewRef = useRef(null);
   const scrollingSource = useRef(null);
@@ -267,6 +270,9 @@ ${element.innerHTML}
           <button className="glass-button" onClick={toggleTheme} title={`Theme: ${theme}`}>
             <Palette size={16} />
           </button>
+          <button className="glass-button" onClick={() => setIsFeedbackOpen(true)} title="Send Feedback">
+            <MessageSquare size={16} />
+          </button>
           <button className="glass-button" onClick={handleClear} style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
             <Trash2 size={16} />
             Clear
@@ -310,6 +316,7 @@ ${element.innerHTML}
         )}
       </main>
       <Footer content={markdown} />
+      <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
     </div>
   );
 }
