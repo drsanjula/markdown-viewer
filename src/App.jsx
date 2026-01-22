@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { fileOpen, fileSave } from 'browser-fs-access';
+import html2pdf from 'html2pdf.js';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { FileText, Eye, Code, Copy, Check, Trash2, FolderOpen, Save } from 'lucide-react';
+import { FileText, Eye, Code, Copy, Check, Trash2, FolderOpen, Save, Download, FileCode } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './App.css';
 
@@ -88,6 +89,55 @@ function App() {
     }
   };
 
+  const handleExportHTML = () => {
+    const element = document.querySelector('.preview-content');
+    if (!element) return;
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Exported Markdown</title>
+<style>
+body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 2rem; color: #333; }
+img { max-width: 100%; border-radius: 8px; }
+pre { background: #f4f4f5; padding: 1rem; border-radius: 4px; overflow-x: auto; }
+code { background: #f4f4f5; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace; }
+blockquote { border-left: 4px solid #e5e7eb; margin: 0; padding-left: 1rem; color: #6b7280; }
+table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+th, td { border: 1px solid #e5e7eb; padding: 0.5rem; text-align: left; }
+th { background: #f9fafb; }
+a { color: #6366f1; text-decoration: none; }
+a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+${element.innerHTML}
+</body>
+</html>`;
+
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'export.html';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportPDF = () => {
+    const element = document.querySelector('.preview-content');
+    const opt = {
+      margin: 1,
+      filename: 'document.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save();
+  };
+
   return (
     <div className="app-container">
       <header className="header">
@@ -104,6 +154,14 @@ function App() {
           <button className="glass-button" onClick={handleSave}>
             <Save size={16} />
             Save
+          </button>
+          <button className="glass-button" onClick={handleExportPDF}>
+            <Download size={16} />
+            PDF
+          </button>
+          <button className="glass-button" onClick={handleExportHTML}>
+            <FileCode size={16} />
+            HTML
           </button>
           <button className="glass-button" onClick={handleCopy}>
             {copied ? <Check size={16} /> : <Copy size={16} />}

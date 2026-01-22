@@ -12,6 +12,7 @@
   "dependencies": {
     "browser-fs-access": "^0.38.0",
     "framer-motion": "^12.28.1",
+    "html2pdf.js": "^0.14.0",
     "lucide-react": "^0.562.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
